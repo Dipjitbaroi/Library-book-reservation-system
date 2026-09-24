@@ -32,6 +32,69 @@ const books = [
     visualStyle: 'coral',
     imageSource: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=1200&q=85',
     featured: true
+  },
+  {
+    title: 'Pachinko',
+    author: 'Min Jin Lee',
+    genre: 'Historical fiction',
+    description: 'An epic multigenerational story of family, identity, and belonging across twentieth-century Korea and Japan.',
+    visualStyle: 'sage',
+    imageSource: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=1200&q=85',
+    featured: false
+  },
+  {
+    title: 'The Overstory',
+    author: 'Richard Powers',
+    genre: 'Literary fiction',
+    description: 'Nine lives become intertwined through a shared wonder for the forests that surround us.',
+    visualStyle: 'gold',
+    imageSource: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=1200&q=85',
+    featured: false
+  },
+  {
+    title: 'Atomic Habits',
+    author: 'James Clear',
+    genre: 'Self-development',
+    description: 'A practical guide to building better habits through small, consistent changes.',
+    visualStyle: 'coral',
+    imageSource: 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=1200&q=85',
+    featured: false
+  },
+  {
+    title: 'Dune',
+    author: 'Frank Herbert',
+    genre: 'Science fiction',
+    description: 'A sweeping desert-world saga of power, ecology, prophecy, and resistance.',
+    visualStyle: 'gold',
+    imageSource: 'https://images.unsplash.com/photo-1531988042231-d39a9cc12a9a?w=1200&q=85',
+    featured: false
+  },
+  {
+    title: 'Educated',
+    author: 'Tara Westover',
+    genre: 'Memoir',
+    description: 'A memoir about education, self-invention, and finding a voice beyond one’s origins.',
+    visualStyle: 'sage',
+    imageSource: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=1200&q=85',
+    featured: false
+  },
+  {
+    title: 'The Creative Act',
+    author: 'Rick Rubin',
+    genre: 'Creativity',
+    description: 'A thoughtful meditation on attention, practice, and the conditions that let creativity emerge.',
+    visualStyle: 'coral',
+    imageSource: 'https://images.unsplash.com/photo-1519682337058-a94d519337bc?w=1200&q=85',
+    featured: false
+  },
+  {
+    title: 'A Brief History of Time',
+    author: 'Stephen Hawking',
+    genre: 'Popular science',
+    description: 'An accessible journey through the origins of the universe, black holes, and the nature of time.',
+    visualStyle: 'gold',
+    imageSource: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=1200&q=85',
+    featured: false
   }
 ]
 

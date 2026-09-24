@@ -39,6 +39,7 @@ function App() {
   const [dataError, setDataError] = useState('')
   const [showAllBooks, setShowAllBooks] = useState(false)
   const [selectedBook, setSelectedBook] = useState(null)
+  const [bookDetailsLoading, setBookDetailsLoading] = useState(false)
   const [reservationModalOpen, setReservationModalOpen] = useState(false)
   const [heroIndex, setHeroIndex] = useState(0)
   const highlightedBooks = books.filter((book) => book.featured).slice(0, 3)
@@ -85,10 +86,11 @@ function App() {
     const bookId = route.split('/')[2]
     const book = books.find((item) => item.id === bookId)
     if (!book) return
+    setBookDetailsLoading(true)
     setSelectedBook(book)
     fetch(`/api/books/${bookId}`).then((response) => response.ok ? response.json() : null).then((bookDetails) => {
       if (bookDetails) setSelectedBook(bookDetails)
-    })
+    }).finally(() => setBookDetailsLoading(false))
   }, [route, books])
 
   useEffect(() => {
@@ -173,7 +175,7 @@ function App() {
   }
 
   if (route === '/books') return <BooksPage books={books} dataError={dataError} onDetails={openBookDetails} onHome={() => navigate('/')} />
-  if (route.startsWith('/books/')) return <BookDetailsPage book={selectedBook} books={books} form={form} errors={errors} dataError={dataError} reservationModalOpen={reservationModalOpen} updateForm={updateForm} submitReservation={submitReservation} resetForm={resetForm} onDetails={openBookDetails} onHome={() => navigate('/')} onReserve={reserveBook} closeReservation={() => setReservationModalOpen(false)} />
+  if (route.startsWith('/books/')) return <BookDetailsPage book={selectedBook} bookDetailsLoading={bookDetailsLoading} books={books} form={form} errors={errors} dataError={dataError} reservationModalOpen={reservationModalOpen} updateForm={updateForm} submitReservation={submitReservation} resetForm={resetForm} onDetails={openBookDetails} onHome={() => navigate('/')} onReserve={reserveBook} closeReservation={() => setReservationModalOpen(false)} />
   if (route.startsWith('/admin')) return <AdminPage />
 
   return (
@@ -317,8 +319,8 @@ function BooksPage({ books, dataError, onDetails, onHome }) {
   return <div className="app-shell"><PageHeader onHome={onHome} /><main className="collection-page section-wrap"><p className="eyebrow"><span className="eyebrow-line" /> The complete collection</p><h1>Every story<br /><em>on our shelves.</em></h1><p className="page-lede">Browse the full Shelfspace collection and choose the next book to make time for.</p>{dataError ? <p className="data-error">{dataError}</p> : books.length ? <div className="book-grid">{books.map((book) => { const Icon = bookIcons[book.visualStyle] || BookOpen; return <article className="book-card" key={book.id}><button className={`book-cover ${book.visualStyle} cover-button`} onClick={() => onDetails(book)}>{book.imageUrl ? <img src={book.imageUrl} alt={`${book.title} cover`} /> : <Icon size={37} strokeWidth={1.4} />}<span>{book.genre}</span></button><div className="book-info"><p className="book-type">From the collection</p><h3>{book.title}</h3><p>by {book.author}</p><button className="card-button" onClick={() => onDetails(book)}>View details <ArrowRight size={15} /></button></div></article> })}</div> : <BookSkeletons count={6} />}</main><PageFooter /></div>
 }
 
-function BookDetailsPage({ book, books, form, errors, dataError, reservationModalOpen, updateForm, submitReservation, resetForm, onHome, onReserve, closeReservation }) {
-  return <div className="app-shell"><PageHeader onHome={onHome} /><main className="detail-page section-wrap">{dataError && <p className="data-error">{dataError}</p>}{book ? <><button className="back-link" onClick={() => window.history.back()}><ArrowRight size={15} /> Back to collection</button><section className="book-detail"><div className={`detail-cover ${book.visualStyle}`}>{book.imageUrl ? <img src={book.imageUrl} alt={`${book.title} cover`} /> : <BookOpen size={48} />}<span>{book.genre}</span></div><div className="detail-copy"><p className="eyebrow">Book details</p><h1>{book.title}</h1><p className="detail-author">by {book.author}</p><p>{book.description}</p><div className="detail-actions"><button className="button button-primary" onClick={() => onReserve(book)}>Reserve this book <ArrowRight size={17} /></button></div></div></section></> : <BookDetailSkeleton />}</main>{reservationModalOpen && <ReservationModal form={form} errors={errors} books={books} updateForm={updateForm} submitReservation={submitReservation} resetForm={resetForm} close={closeReservation} />}<PageFooter /></div>
+function BookDetailsPage({ book, bookDetailsLoading, books, form, errors, dataError, reservationModalOpen, updateForm, submitReservation, resetForm, onHome, onReserve, closeReservation }) {
+  return <div className="app-shell"><PageHeader onHome={onHome} /><main className="detail-page section-wrap">{dataError && <p className="data-error">{dataError}</p>}{book && !bookDetailsLoading ? <><button className="back-link" onClick={() => window.history.back()}><ArrowRight size={15} /> Back to collection</button><section className="book-detail"><div className={`detail-cover ${book.visualStyle}`}>{book.imageUrl ? <img src={book.imageUrl} alt={`${book.title} cover`} /> : <BookOpen size={48} />}<span>{book.genre}</span></div><div className="detail-copy"><p className="eyebrow">Book details</p><h1>{book.title}</h1><p className="detail-author">by {book.author}</p><p>{book.description}</p><div className="detail-actions"><button className="button button-primary" onClick={() => onReserve(book)}>Reserve this book <ArrowRight size={17} /></button></div></div></section></> : <BookDetailSkeleton />}</main>{reservationModalOpen && <ReservationModal form={form} errors={errors} books={books} updateForm={updateForm} submitReservation={submitReservation} resetForm={resetForm} close={closeReservation} />}<PageFooter /></div>
 }
 
 function BookSkeletons({ count }) {
