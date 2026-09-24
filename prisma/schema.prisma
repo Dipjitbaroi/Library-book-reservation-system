@@ -19,6 +19,7 @@ model Reservation {
   book         Book?    @relation(fields: [bookId], references: [id])
   pickupDate   DateTime
   durationDays Int
+  status       String   @default("PENDING")
   notes        String?
   createdAt    DateTime @default(now())
 }
@@ -30,6 +31,8 @@ model Book {
   genre       String
   description String
   visualStyle String
+  imageUrl    String?
+  imagePublicId String?
   featured    Boolean  @default(false)
   createdAt   DateTime @default(now())
   reservations Reservation[]
