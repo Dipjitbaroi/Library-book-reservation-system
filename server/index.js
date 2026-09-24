@@ -58,7 +58,9 @@ app.get('/api/stories/featured', async (_req, res) => {
 
 app.post('/api/reservations', async (req, res) => {
   try {
-    const book = await prisma.book.findUnique({ where: { id: req.body.bookId } })
+    const book = req.body.bookId
+      ? await prisma.book.findUnique({ where: { id: req.body.bookId } })
+      : await prisma.book.findUnique({ where: { title: req.body.bookTitle } })
     if (!book) return res.status(400).json({ error: 'Please choose a valid book.' })
     const reservation = await prisma.reservation.create({
       data: {
