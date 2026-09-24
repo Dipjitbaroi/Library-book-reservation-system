@@ -20,3 +20,23 @@ model Reservation {
   notes        String?
   createdAt    DateTime @default(now())
 }
+
+model Book {
+  id          String   @id @default(cuid())
+  title       String   @unique
+  author      String
+  genre       String
+  description String
+  visualStyle String
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model ReaderStory {
+  id          String   @id @default(cuid())
+  quote       String
+  author      String
+  memberSince Int
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
