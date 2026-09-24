@@ -20,7 +20,7 @@ import {
 const bookIcons = { sage: BookOpen, gold: Sparkles, coral: Library }
 
 const initialForm = {
-  fullName: '', email: '', phone: '', memberType: 'Reader', bookTitle: '', pickupDate: '', durationDays: '7', notes: '', updates: false
+  fullName: '', email: '', phone: '', memberType: 'Reader', bookId: '', bookTitle: '', pickupDate: '', durationDays: '7', notes: '', updates: false
 }
 
 function App() {
@@ -31,6 +31,8 @@ function App() {
   const [books, setBooks] = useState([])
   const [story, setStory] = useState(null)
   const [dataError, setDataError] = useState('')
+  const [showAllBooks, setShowAllBooks] = useState(false)
+  const [selectedBook, setSelectedBook] = useState(null)
 
   useEffect(() => {
     const loadLibraryData = async () => {
@@ -82,7 +84,7 @@ function App() {
           email: form.email,
           phone: form.phone,
           memberType: form.memberType,
-          bookTitle: form.bookTitle,
+          bookId: form.bookId,
           pickupDate: new Date(`${form.pickupDate}T12:00:00`).toISOString(),
           durationDays: Number(form.durationDays),
           notes: form.notes || null
@@ -103,6 +105,22 @@ function App() {
     setSubmitted(null)
   }
 
+  const openBookDetails = async (book) => {
+    setSelectedBook(book)
+    try {
+      const response = await fetch(`/api/books/${book.id}`)
+      if (response.ok) setSelectedBook(await response.json())
+    } catch {
+      setDataError('Book details are temporarily unavailable.')
+    }
+    document.getElementById('book-details')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const reserveBook = (book) => {
+    setForm((current) => ({ ...current, bookId: book.id, bookTitle: book.title }))
+    document.getElementById('reserve')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   return (
     <div className="app-shell">
       <header className="site-header">
@@ -119,7 +137,7 @@ function App() {
       <main id="top">
         <section className="hero section-wrap">
           <div className="hero-copy">
-            <p className="eyebrow"><span className="eyebrow-line" /> Your neighborhood, better read</p>
+         <select name="bookId" value={form.bookId} onChange={(event) => { const book = books.find((item) => item.id === event.target.value); setForm((current) => ({ ...current, bookId: event.target.value, bookTitle: book?.title || '' })) }} aria-invalid={Boolean(errors.bookTitle)}><option value="">Choose a title</option>{books.map((book) => <option value={book.id} key={book.id}>{book.title}</option>)}</select>{errors.bookTitle && <small className="field-error">{errors.bookTitle}</small>}
             <h1>Good books.<br /><em>Right on time.</em></h1>
             <p className="hero-description">A calmer way to discover and reserve the stories you have been meaning to read. Browse our shelves, then pick up your next favorite when it suits you.</p>
             <div className="hero-actions"><a className="button button-primary" href="#reserve">Book a title <ArrowRight size={17} /></a><a className="button button-secondary" href="#collection">Explore the shelves <ChevronDown size={17} /></a></div>
@@ -134,7 +152,9 @@ function App() {
 
         <section className="strip" id="how-it-works"><div className="strip-inner"><div><CalendarDays size={20} /><span><strong>Reserve ahead</strong> Choose your pickup window</span></div><div><Clock3 size={20} /><span><strong>Keep it awhile</strong> Flexible 7, 14, or 30 day loans</span></div><div><Search size={20} /><span><strong>Find your next</strong> Personal picks from real librarians</span></div></div></section>
 
-        <section className="content-section section-wrap" id="collection"><div className="section-heading"><div><p className="eyebrow">The considered collection</p><h2>Stories worth<br /><em>making time for.</em></h2></div><a className="text-link" href="#reserve">View all books <ArrowRight size={16} /></a></div>{dataError ? <p className="data-error">{dataError}</p> : <div className="book-grid">{books.map(({ id, title, author, genre, visualStyle }) => { const Icon = bookIcons[visualStyle] || BookOpen; return <article className="book-card" key={id}><div className={`book-cover ${visualStyle}`}><Icon size={37} strokeWidth={1.4} /><span>{genre}</span></div><div className="book-info"><p className="book-type">Featured this week</p><h3>{title}</h3><p>by {author}</p><button className="card-button" onClick={() => { setForm((current) => ({ ...current, bookTitle: title })); document.getElementById('reserve')?.scrollIntoView({ behavior: 'smooth' }) }}>Reserve this book <ArrowRight size={15} /></button></div></article> })}</div>}</section>
+        <section className="content-section section-wrap" id="collection"><div className="section-heading"><div><p className="eyebrow">The considered collection</p><h2>{showAllBooks ? 'Every story' : 'Stories worth'}<br /><em>{showAllBooks ? 'on our shelves.' : 'making time for.'}</em></h2></div><button className="text-link link-button" onClick={() => setShowAllBooks(!showAllBooks)}>{showAllBooks ? 'Featured books' : 'View all books'} <ArrowRight size={16} /></button></div>{dataError ? <p className="data-error">{dataError}</p> : <div className="book-grid">{books.filter((book) => showAllBooks || book.featured).map(({ id, title, author, genre, visualStyle }) => { const Icon = bookIcons[visualStyle] || BookOpen; return <article className="book-card" key={id}><button className={`book-cover ${visualStyle} cover-button`} onClick={() => openBookDetails({ id, title, author, genre, visualStyle })}><Icon size={37} strokeWidth={1.4} /><span>{genre}</span></button><div className="book-info"><p className="book-type">{showAllBooks ? 'From the collection' : 'Featured this week'}</p><h3>{title}</h3><p>by {author}</p><div className="card-actions"><button className="card-button" onClick={() => openBookDetails({ id, title, author, genre, visualStyle })}>View details <ArrowRight size={15} /></button><button className="card-button" onClick={() => reserveBook({ id, title })}>Reserve <ArrowRight size={15} /></button></div></div></article> })}</div>}</section>
+
+        {selectedBook && <section className="book-detail section-wrap" id="book-details"><div className={`detail-cover ${selectedBook.visualStyle}`}><BookOpen size={48} /><span>{selectedBook.genre}</span></div><div className="detail-copy"><p className="eyebrow">Book details</p><h2>{selectedBook.title}</h2><p className="detail-author">by {selectedBook.author}</p><p>{selectedBook.description}</p><div className="detail-actions"><button className="button button-primary" onClick={() => reserveBook(selectedBook)}>Reserve this book <ArrowRight size={17} /></button><button className="reset-button" onClick={() => setSelectedBook(null)}>Close details</button></div></div></section>}
 
         <section className="quote-section" id="stories"><div className="quote-inner"><Quote size={36} className="quote-mark" /><blockquote>{story ? `“${story.quote}”` : 'Loading a reader story...'}</blockquote>{story && <p>— {story.author}, member since {story.memberSince}</p>}</div></section>
 

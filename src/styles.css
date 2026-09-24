@@ -13,6 +13,8 @@ button, a { transition:all .2s ease; }
 .brand-dot { color:var(--coral); }
 .main-nav { display:flex; align-items:center; gap:35px; font-size:13px; color:#56625b; }
 .main-nav a:hover, .text-link:hover { color:var(--coral); }
+.link-button { border:0; border-bottom:1px solid var(--coral); background:none; cursor:pointer; }
+.cover-button { width:100%; border:0; text-align:left; cursor:pointer; }.card-actions { display:flex; gap:18px; }.card-actions .card-button { margin-top:23px; }.book-detail { padding:75px 0; display:grid; grid-template-columns:280px 1fr; gap:55px; align-items:center; border-top:1px solid var(--line); }.detail-cover { min-height:300px; padding:28px; display:flex; flex-direction:column; justify-content:space-between; color:var(--ink); }.detail-cover.sage { background:#b8c7b7; }.detail-cover.gold { background:#dfbc7c; }.detail-cover.coral { background:#d89378; }.detail-cover span { font-size:11px; text-transform:uppercase; letter-spacing:1px; }.detail-copy h2 { font-size:50px; }.detail-author { color:var(--coral); font-size:14px; }.detail-copy > p:not(.eyebrow):not(.detail-author) { max-width:500px; color:var(--muted); line-height:1.7; }.detail-actions { margin-top:28px; display:flex; align-items:center; gap:20px; }
 .nav-cta { padding:12px 17px; display:flex; align-items:center; gap:8px; border:1px solid var(--ink); color:var(--ink); }
 .nav-cta:hover { background:var(--ink); color:var(--cream); }
 .menu-toggle { display:none; background:none; border:0; color:var(--ink); }
