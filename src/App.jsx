@@ -66,6 +66,7 @@ function App() {
   const [errors, setErrors] = useState({})
   const [touched, setTouched] = useState({})
   const [submitted, setSubmitted] = useState(null)
+  const [toast, setToast] = useState(null)
   const [books, setBooks] = useState([])
   const [story, setStory] = useState(null)
   const [dataError, setDataError] = useState('')
@@ -131,9 +132,17 @@ function App() {
     return () => window.clearInterval(timer)
   }, [highlightedBooks.length])
 
+  useEffect(() => {
+    if (!toast) return undefined
+    const timer = window.setTimeout(() => setToast(null), 5000)
+    return () => window.clearTimeout(timer)
+  }, [toast])
+
   const moveHero = (direction) => {
     setHeroIndex((current) => (current + direction + highlightedBooks.length) % highlightedBooks.length)
   }
+
+  const showToast = (type, message) => setToast({ type, message })
 
   const updateForm = (event) => {
     const { name, value, type, checked } = event.target
@@ -170,7 +179,10 @@ function App() {
     event.preventDefault()
     const nextErrors = validate()
     setErrors(nextErrors)
-    if (Object.keys(nextErrors).length) return
+    if (Object.keys(nextErrors).length) {
+      showToast('error', 'Please correct the highlighted reservation fields.')
+      return
+    }
     try {
       const response = await fetch('/api/reservations', {
         method: 'POST',
@@ -181,17 +193,24 @@ function App() {
           phone: normalizeBangladeshPhone(form.phone),
           memberType: form.memberType,
           bookId: form.bookId,
+          bookTitle: form.bookTitle,
           pickupDate: new Date(`${form.pickupDate}T12:00:00`).toISOString(),
           durationDays: Number(form.durationDays),
           notes: form.notes || null
         })
       })
-      if (!response.ok) throw new Error('Reservation could not be saved')
-    } catch {
-      setErrors({ form: 'We could not save your reservation. Please check that the library database is connected and try again.' })
+      const responseBody = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(responseBody.error || 'Reservation could not be saved.')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Reservation could not be saved.'
+      setErrors({ form: message })
+      showToast('error', message)
       return
     }
     setSubmitted({ ...form })
+    setErrors({})
+    setReservationModalOpen(false)
+    showToast('success', 'Reservation submitted successfully.')
     document.getElementById('confirmation')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
@@ -220,7 +239,7 @@ function App() {
   }
 
   if (route === '/books') return <BooksPage books={books} dataError={dataError} onDetails={openBookDetails} onHome={() => navigate('/')} />
-  if (route.startsWith('/books/')) return <BookDetailsPage book={selectedBook} bookDetailsLoading={bookDetailsLoading} books={books} form={form} errors={errors} dataError={dataError} reservationModalOpen={reservationModalOpen} updateForm={updateForm} validateFieldOnBlur={validateFieldOnBlur} submitReservation={submitReservation} resetForm={resetForm} onDetails={openBookDetails} onHome={() => navigate('/')} onReserve={reserveBook} closeReservation={() => setReservationModalOpen(false)} />
+  if (route.startsWith('/books/')) return <BookDetailsPage book={selectedBook} bookDetailsLoading={bookDetailsLoading} books={books} form={form} errors={errors} dataError={dataError} reservationModalOpen={reservationModalOpen} updateForm={updateForm} validateFieldOnBlur={validateFieldOnBlur} submitReservation={submitReservation} resetForm={resetForm} onDetails={openBookDetails} onHome={() => navigate('/')} onReserve={reserveBook} closeReservation={() => setReservationModalOpen(false)} toast={toast} dismissToast={() => setToast(null)} />
   if (route.startsWith('/admin')) return <AdminPage />
 
   return (
@@ -262,6 +281,7 @@ function App() {
       </main>
 
       {reservationModalOpen && <ReservationModal form={form} errors={errors} books={books} updateForm={updateForm} validateFieldOnBlur={validateFieldOnBlur} submitReservation={submitReservation} resetForm={resetForm} close={() => setReservationModalOpen(false)} />}
+      <Toast toast={toast} dismiss={() => setToast(null)} />
       <footer className="site-footer"><div className="footer-top"><a className="brand" href="#top"><span className="brand-mark"><BookOpen size={19} /></span><span>Shelfspace<span className="brand-dot">.</span></span></a><p>A little more reading<br />in every day.</p><div className="socials"><a href="#top" aria-label="Instagram"><Instagram size={18} /></a><a href="#top" aria-label="Facebook"><Facebook size={18} /></a><a href="#top" aria-label="Twitter"><Twitter size={18} /></a></div></div><div className="footer-bottom"><span>14 Lantern Lane, Brookfield</span><a href="mailto:hello@shelfspace.library">hello@shelfspace.library</a><span>© 2024 Shelfspace Library</span></div></footer>
     </div>
   )
@@ -362,8 +382,8 @@ function BooksPage({ books, dataError, onDetails, onHome }) {
   return <div className="app-shell"><PageHeader onHome={onHome} /><main className="collection-page section-wrap"><p className="eyebrow"><span className="eyebrow-line" /> The complete collection</p><h1>Every story<br /><em>on our shelves.</em></h1><p className="page-lede">Browse the full Shelfspace collection and choose the next book to make time for.</p>{dataError ? <p className="data-error">{dataError}</p> : books.length ? <div className="book-grid">{books.map((book) => { const Icon = bookIcons[book.visualStyle] || BookOpen; return <article className="book-card" key={book.id}><button className={`book-cover ${book.visualStyle} cover-button`} onClick={() => onDetails(book)}>{book.imageUrl ? <img src={book.imageUrl} alt={`${book.title} cover`} /> : <Icon size={37} strokeWidth={1.4} />}<span>{book.genre}</span></button><div className="book-info"><p className="book-type">From the collection</p><h3>{book.title}</h3><p>by {book.author}</p><button className="card-button" onClick={() => onDetails(book)}>View details <ArrowRight size={15} /></button></div></article> })}</div> : <BookSkeletons count={6} />}</main><PageFooter /></div>
 }
 
-function BookDetailsPage({ book, bookDetailsLoading, books, form, errors, dataError, reservationModalOpen, updateForm, validateFieldOnBlur, submitReservation, resetForm, onHome, onReserve, closeReservation }) {
-  return <div className="app-shell"><PageHeader onHome={onHome} /><main className="detail-page section-wrap">{dataError && <p className="data-error">{dataError}</p>}{book && !bookDetailsLoading ? <><button className="back-link" onClick={() => window.history.back()}><ArrowRight size={15} /> Back to collection</button><section className="book-detail"><div className={`detail-cover ${book.visualStyle}`}>{book.imageUrl ? <img src={book.imageUrl} alt={`${book.title} cover`} /> : <BookOpen size={48} />}<span>{book.genre}</span></div><div className="detail-copy"><p className="eyebrow">Book details</p><h1>{book.title}</h1><p className="detail-author">by {book.author}</p><p>{book.description}</p><div className="detail-actions"><button className="button button-primary" onClick={() => onReserve(book)}>Reserve this book <ArrowRight size={17} /></button></div></div></section></> : <BookDetailSkeleton />}</main>{reservationModalOpen && <ReservationModal form={form} errors={errors} books={books} updateForm={updateForm} validateFieldOnBlur={validateFieldOnBlur} submitReservation={submitReservation} resetForm={resetForm} close={closeReservation} />}<PageFooter /></div>
+function BookDetailsPage({ book, bookDetailsLoading, books, form, errors, dataError, reservationModalOpen, updateForm, validateFieldOnBlur, submitReservation, resetForm, onHome, onReserve, closeReservation, toast, dismissToast }) {
+  return <div className="app-shell"><PageHeader onHome={onHome} /><main className="detail-page section-wrap">{dataError && <p className="data-error">{dataError}</p>}{book && !bookDetailsLoading ? <><button className="back-link" onClick={() => window.history.back()}><ArrowRight size={15} /> Back to collection</button><section className="book-detail"><div className={`detail-cover ${book.visualStyle}`}>{book.imageUrl ? <img src={book.imageUrl} alt={`${book.title} cover`} /> : <BookOpen size={48} />}<span>{book.genre}</span></div><div className="detail-copy"><p className="eyebrow">Book details</p><h1>{book.title}</h1><p className="detail-author">by {book.author}</p><p>{book.description}</p><div className="detail-actions"><button className="button button-primary" onClick={() => onReserve(book)}>Reserve this book <ArrowRight size={17} /></button></div></div></section></> : <BookDetailSkeleton />}</main>{reservationModalOpen && <ReservationModal form={form} errors={errors} books={books} updateForm={updateForm} validateFieldOnBlur={validateFieldOnBlur} submitReservation={submitReservation} resetForm={resetForm} close={closeReservation} />}<Toast toast={toast} dismiss={dismissToast} /><PageFooter /></div>
 }
 
 function BookSkeletons({ count }) {
@@ -372,6 +392,12 @@ function BookSkeletons({ count }) {
 
 function BookDetailSkeleton() {
   return <section className="book-detail skeleton-detail"><div className="skeleton-detail-cover" /><div><i className="skeleton-line short" /><i className="skeleton-line title" /><i className="skeleton-line" /><i className="skeleton-line" /></div></section>
+}
+
+function Toast({ toast, dismiss }) {
+  if (!toast) return null
+  const Icon = toast.type === 'success' ? Check : X
+  return <div className={`toast toast-${toast.type}`} role="status"><Icon size={18} /><span>{toast.message}</span><button type="button" onClick={dismiss} aria-label="Dismiss notification"><X size={16} /></button></div>
 }
 
 function Field({ label, name, value, onChange, onBlur, error, placeholder, type = 'text', wide = false, min, max, inputMode, autoComplete }) {
