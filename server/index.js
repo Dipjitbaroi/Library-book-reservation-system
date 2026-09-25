@@ -137,7 +137,9 @@ app.get('/api/stories/featured', async (_req, res) => {
 
 app.post('/api/reservations', async (req, res) => {
   try {
+    const email = String(req.body.email || '').trim()
     const normalizedPhone = String(req.body.phone || '').replace(/[\s()-]/g, '')
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Please provide a valid email address.' })
     if (!/^(?:\+?880|0)1[3-9]\d{8}$/.test(normalizedPhone)) return res.status(400).json({ error: 'Please provide a valid Bangladesh mobile number.' })
     const book = req.body.bookId
       ? await prisma.book.findUnique({ where: { id: req.body.bookId } })
@@ -146,7 +148,7 @@ app.post('/api/reservations', async (req, res) => {
     const reservation = await prisma.reservation.create({
       data: {
         fullName: req.body.fullName,
-        email: req.body.email,
+        email,
         phone: normalizedPhone.startsWith('+880') ? normalizedPhone : normalizedPhone.startsWith('880') ? `+${normalizedPhone}` : `+880${normalizedPhone.slice(1)}`,
         memberType: req.body.memberType,
         bookTitle: book.title,

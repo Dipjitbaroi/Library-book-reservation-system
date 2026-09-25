@@ -28,11 +28,43 @@ const initialForm = {
   fullName: '', email: '', phone: '', memberType: 'Reader', bookId: '', bookTitle: '', pickupDate: '', durationDays: '7', notes: '', updates: false
 }
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const bangladeshPhonePattern = /^(?:\+?880|0)1[3-9]\d{8}$/
+
+const sanitizePhoneInput = (value) => {
+  const digitsAndPlus = value.replace(/[^\d+]/g, '')
+  const normalized = digitsAndPlus.startsWith('+')
+    ? `+${digitsAndPlus.slice(1).replace(/\+/g, '')}`
+    : digitsAndPlus.replace(/\+/g, '')
+
+  return normalized.slice(0, 14)
+}
+
+const getFieldError = (name, value) => {
+  const trimmedValue = String(value).trim()
+
+  if (name === 'fullName' && !trimmedValue) return 'Please enter your full name.'
+  if (name === 'email') {
+    if (!trimmedValue) return 'Email is required.'
+    if (!emailPattern.test(trimmedValue)) return 'Enter a valid email address.'
+  }
+  if (name === 'phone') {
+    if (!trimmedValue) return 'Phone number is required.'
+    if (!bangladeshPhonePattern.test(trimmedValue)) return 'Enter a valid Bangladesh mobile number, e.g. 01712345678.'
+  }
+  if (name === 'bookTitle' && !trimmedValue) return 'Choose a book to reserve.'
+  if (name === 'pickupDate' && !trimmedValue) return 'Choose a pickup date.'
+  if (name === 'durationDays' && (!trimmedValue || Number(trimmedValue) < 1 || Number(trimmedValue) > 30)) return 'Choose between 1 and 30 days.'
+
+  return ''
+}
+
 function App() {
   const [route, setRoute] = useState(window.location.pathname)
   const [menuOpen, setMenuOpen] = useState(false)
   const [form, setForm] = useState(initialForm)
   const [errors, setErrors] = useState({})
+  const [touched, setTouched] = useState({})
   const [submitted, setSubmitted] = useState(null)
   const [books, setBooks] = useState([])
   const [story, setStory] = useState(null)
@@ -105,20 +137,25 @@ function App() {
 
   const updateForm = (event) => {
     const { name, value, type, checked } = event.target
-    setForm((current) => ({ ...current, [name]: type === 'checkbox' ? checked : value }))
-    if (errors[name]) setErrors((current) => ({ ...current, [name]: '' }))
+    const nextValue = name === 'phone' ? sanitizePhoneInput(value) : type === 'checkbox' ? checked : value
+    setForm((current) => ({ ...current, [name]: nextValue }))
+    if (touched[name] || errors[name]) {
+      setErrors((current) => ({ ...current, [name]: getFieldError(name, nextValue), form: '' }))
+    }
+  }
+
+  const validateFieldOnBlur = (event) => {
+    const { name, value } = event.target
+    setTouched((current) => ({ ...current, [name]: true }))
+    setErrors((current) => ({ ...current, [name]: getFieldError(name, value) }))
   }
 
   const validate = () => {
     const nextErrors = {}
-    if (!form.fullName.trim()) nextErrors.fullName = 'Please enter your full name.'
-    if (!form.email.trim()) nextErrors.email = 'Email is required.'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) nextErrors.email = 'Enter a valid email address.'
-    if (!form.phone.trim()) nextErrors.phone = 'Phone number is required.'
-    else if (!/^(?:\+?880|0)1[3-9]\d{8}$/.test(form.phone.replace(/[\s()-]/g, ''))) nextErrors.phone = 'Enter a valid Bangladesh mobile number, e.g. 01712345678.'
-    if (!form.bookTitle.trim()) nextErrors.bookTitle = 'Choose a book to reserve.'
-    if (!form.pickupDate) nextErrors.pickupDate = 'Choose a pickup date.'
-    if (!form.durationDays || Number(form.durationDays) < 1 || Number(form.durationDays) > 30) nextErrors.durationDays = 'Choose between 1 and 30 days.'
+    ;['fullName', 'email', 'phone', 'bookTitle', 'pickupDate', 'durationDays'].forEach((name) => {
+      const error = getFieldError(name, form[name])
+      if (error) nextErrors[name] = error
+    })
     return nextErrors
   }
 
@@ -161,6 +198,7 @@ function App() {
   const resetForm = () => {
     setForm(initialForm)
     setErrors({})
+    setTouched({})
     setSubmitted(null)
   }
 
@@ -182,7 +220,7 @@ function App() {
   }
 
   if (route === '/books') return <BooksPage books={books} dataError={dataError} onDetails={openBookDetails} onHome={() => navigate('/')} />
-  if (route.startsWith('/books/')) return <BookDetailsPage book={selectedBook} bookDetailsLoading={bookDetailsLoading} books={books} form={form} errors={errors} dataError={dataError} reservationModalOpen={reservationModalOpen} updateForm={updateForm} submitReservation={submitReservation} resetForm={resetForm} onDetails={openBookDetails} onHome={() => navigate('/')} onReserve={reserveBook} closeReservation={() => setReservationModalOpen(false)} />
+  if (route.startsWith('/books/')) return <BookDetailsPage book={selectedBook} bookDetailsLoading={bookDetailsLoading} books={books} form={form} errors={errors} dataError={dataError} reservationModalOpen={reservationModalOpen} updateForm={updateForm} validateFieldOnBlur={validateFieldOnBlur} submitReservation={submitReservation} resetForm={resetForm} onDetails={openBookDetails} onHome={() => navigate('/')} onReserve={reserveBook} closeReservation={() => setReservationModalOpen(false)} />
   if (route.startsWith('/admin')) return <AdminPage />
 
   return (
@@ -220,17 +258,17 @@ function App() {
 
         <section className="quote-section" id="stories"><div className="quote-inner"><Quote size={36} className="quote-mark" /><blockquote>{story ? `“${story.quote}”` : 'Loading a reader story...'}</blockquote>{story && <p>— {story.author}, member since {story.memberSince}</p>}</div></section>
 
-        <section className="reservation-section section-wrap" id="reserve"><div className="reservation-intro"><p className="eyebrow">Page 02 / Reservation desk</p><h2>Save your spot<br /><em>on the shelf.</em></h2><p>Tell us what you are looking for and when you would like to collect it. We will keep your title waiting for 48 hours after your pickup date.</p><div className="open-hours"><span className="open-dot" /><div><strong>Open today</strong><span>09:00 — 19:00</span></div></div></div><div className="form-panel"><form onSubmit={submitReservation} noValidate><div className="form-intro"><span>Reservation request</span><small>Fields marked * are required</small></div>{errors.form && <p className="form-error">{errors.form}</p>}<div className="form-grid"><Field label="Full name" name="fullName" value={form.fullName} onChange={updateForm} error={errors.fullName} placeholder="Your name" /><Field label="Email address" name="email" value={form.email} onChange={updateForm} error={errors.email} placeholder="you@example.com" type="email" /><Field label="Phone number" name="phone" value={form.phone} onChange={updateForm} error={errors.phone} placeholder="+8801712345678" type="tel" /><label className="field"><span>Membership type</span><select name="memberType" value={form.memberType} onChange={updateForm}><option>Reader</option><option>Student</option><option>Educator</option><option>Community partner</option></select></label><label className="field wide"><span>Book title <b>*</b></span><select name="bookTitle" value={form.bookTitle} onChange={updateForm} aria-invalid={Boolean(errors.bookTitle)}><option value="">Choose a title</option>{books.map((book) => <option value={book.title} key={book.id}>{book.title}</option>)}</select>{errors.bookTitle && <small className="field-error">{errors.bookTitle}</small>}</label><Field label="Pickup date" name="pickupDate" value={form.pickupDate} onChange={updateForm} error={errors.pickupDate} type="date" /><Field label="Loan length" name="durationDays" value={form.durationDays} onChange={updateForm} error={errors.durationDays} type="number" min="1" max="30" /><label className="field wide"><span>Anything we should know? <small>(optional)</small></span><textarea name="notes" value={form.notes} onChange={updateForm} rows="3" placeholder="Accessibility needs, a note for our librarians..."></textarea></label><label className="checkbox-field wide"><input type="checkbox" name="updates" checked={form.updates} onChange={updateForm} /><span>Send me occasional reading recommendations and library news.</span></label></div><div className="form-actions"><button className="button button-primary" type="submit">Submit reservation <ArrowRight size={17} /></button><button className="reset-button" type="button" onClick={resetForm}>Reset form</button></div></form>{submitted && <div className="confirmation" id="confirmation"><div className="confirmation-icon"><Check size={20} /></div><div><strong>Reservation request received.</strong><p>{submitted.bookTitle} will be ready for {submitted.fullName} on {submitted.pickupDate}.</p></div></div>}</div></section>
+            <section className="reservation-section section-wrap" id="reserve"><div className="reservation-intro"><p className="eyebrow">Page 02 / Reservation desk</p><h2>Save your spot<br /><em>on the shelf.</em></h2><p>Tell us what you are looking for and when you would like to collect it. We will keep your title waiting for 48 hours after your pickup date.</p><div className="open-hours"><span className="open-dot" /><div><strong>Open today</strong><span>09:00 — 19:00</span></div></div></div><div className="form-panel"><form onSubmit={submitReservation} noValidate><div className="form-intro"><span>Reservation request</span><small>Fields marked * are required</small></div>{errors.form && <p className="form-error">{errors.form}</p>}<div className="form-grid"><Field label="Full name" name="fullName" value={form.fullName} onChange={updateForm} onBlur={validateFieldOnBlur} error={errors.fullName} placeholder="Your name" autoComplete="name" /><Field label="Email address" name="email" value={form.email} onChange={updateForm} onBlur={validateFieldOnBlur} error={errors.email} placeholder="you@example.com" type="email" autoComplete="email" /><Field label="Phone number" name="phone" value={form.phone} onChange={updateForm} onBlur={validateFieldOnBlur} error={errors.phone} placeholder="+8801712345678" type="tel" inputMode="numeric" autoComplete="tel" /><label className="field"><span>Membership type</span><select name="memberType" value={form.memberType} onChange={updateForm}><option>Reader</option><option>Student</option><option>Educator</option><option>Community partner</option></select></label><label className="field wide"><span>Book title <b>*</b></span><select name="bookTitle" value={form.bookTitle} onChange={updateForm} onBlur={validateFieldOnBlur} aria-invalid={Boolean(errors.bookTitle)}><option value="">Choose a title</option>{books.map((book) => <option value={book.title} key={book.id}>{book.title}</option>)}</select>{errors.bookTitle && <small className="field-error">{errors.bookTitle}</small>}</label><Field label="Pickup date" name="pickupDate" value={form.pickupDate} onChange={updateForm} onBlur={validateFieldOnBlur} error={errors.pickupDate} type="date" /><Field label="Loan length" name="durationDays" value={form.durationDays} onChange={updateForm} onBlur={validateFieldOnBlur} error={errors.durationDays} type="number" min="1" max="30" inputMode="numeric" /><label className="field wide"><span>Anything we should know? <small>(optional)</small></span><textarea name="notes" value={form.notes} onChange={updateForm} rows="3" placeholder="Accessibility needs, a note for our librarians..."></textarea></label><label className="checkbox-field wide"><input type="checkbox" name="updates" checked={form.updates} onChange={updateForm} /><span>Send me occasional reading recommendations and library news.</span></label></div><div className="form-actions"><button className="button button-primary" type="submit">Submit reservation <ArrowRight size={17} /></button><button className="reset-button" type="button" onClick={resetForm}>Reset form</button></div></form>{submitted && <div className="confirmation" id="confirmation"><div className="confirmation-icon"><Check size={20} /></div><div><strong>Reservation request received.</strong><p>{submitted.bookTitle} will be ready for {submitted.fullName} on {submitted.pickupDate}.</p></div></div>}</div></section>
       </main>
 
-      {reservationModalOpen && <ReservationModal form={form} errors={errors} books={books} updateForm={updateForm} submitReservation={submitReservation} resetForm={resetForm} close={() => setReservationModalOpen(false)} />}
+      {reservationModalOpen && <ReservationModal form={form} errors={errors} books={books} updateForm={updateForm} validateFieldOnBlur={validateFieldOnBlur} submitReservation={submitReservation} resetForm={resetForm} close={() => setReservationModalOpen(false)} />}
       <footer className="site-footer"><div className="footer-top"><a className="brand" href="#top"><span className="brand-mark"><BookOpen size={19} /></span><span>Shelfspace<span className="brand-dot">.</span></span></a><p>A little more reading<br />in every day.</p><div className="socials"><a href="#top" aria-label="Instagram"><Instagram size={18} /></a><a href="#top" aria-label="Facebook"><Facebook size={18} /></a><a href="#top" aria-label="Twitter"><Twitter size={18} /></a></div></div><div className="footer-bottom"><span>14 Lantern Lane, Brookfield</span><a href="mailto:hello@shelfspace.library">hello@shelfspace.library</a><span>© 2024 Shelfspace Library</span></div></footer>
     </div>
   )
 }
 
-function ReservationModal({ form, errors, books, updateForm, submitReservation, resetForm, close }) {
-  return <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="reservation-modal-title"><div className="reservation-modal-card"><button className="modal-close" type="button" onClick={close} aria-label="Close reservation form"><X size={20} /></button><div className="form-intro"><span id="reservation-modal-title">Reserve this book</span><small>Fields marked * are required</small></div><form onSubmit={submitReservation} noValidate>{errors.form && <p className="form-error">{errors.form}</p>}<div className="form-grid"><Field label="Full name" name="fullName" value={form.fullName} onChange={updateForm} error={errors.fullName} placeholder="Your name" /><Field label="Email address" name="email" value={form.email} onChange={updateForm} error={errors.email} placeholder="you@example.com" type="email" /><Field label="Phone number" name="phone" value={form.phone} onChange={updateForm} error={errors.phone} placeholder="+8801712345678" type="tel" /><label className="field"><span>Membership type</span><select name="memberType" value={form.memberType} onChange={updateForm}><option>Reader</option><option>Student</option><option>Educator</option><option>Community partner</option></select></label><label className="field wide"><span>Book title <b>*</b></span><select name="bookId" value={form.bookId} onChange={(event) => { const book = books.find((item) => item.id === event.target.value); updateForm({ target: { name: 'bookId', value: event.target.value, type: 'select' } }); updateForm({ target: { name: 'bookTitle', value: book?.title || '', type: 'text' } }) }} aria-invalid={Boolean(errors.bookTitle)}><option value="">Choose a title</option>{books.map((book) => <option value={book.id} key={book.id}>{book.title}</option>)}</select>{errors.bookTitle && <small className="field-error">{errors.bookTitle}</small>}</label><Field label="Pickup date" name="pickupDate" value={form.pickupDate} onChange={updateForm} error={errors.pickupDate} type="date" /><Field label="Loan length" name="durationDays" value={form.durationDays} onChange={updateForm} error={errors.durationDays} type="number" min="1" max="30" /><label className="field wide"><span>Anything we should know? <small>(optional)</small></span><textarea name="notes" value={form.notes} onChange={updateForm} rows="3" placeholder="Accessibility needs, a note for our librarians..."></textarea></label></div><div className="form-actions"><button className="button button-primary" type="submit">Submit reservation <ArrowRight size={17} /></button><button className="reset-button" type="button" onClick={resetForm}>Reset form</button></div></form></div></div>
+function ReservationModal({ form, errors, books, updateForm, validateFieldOnBlur, submitReservation, resetForm, close }) {
+  return <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="reservation-modal-title"><div className="reservation-modal-card"><button className="modal-close" type="button" onClick={close} aria-label="Close reservation form"><X size={20} /></button><div className="form-intro"><span id="reservation-modal-title">Reserve this book</span><small>Fields marked * are required</small></div><form onSubmit={submitReservation} noValidate>{errors.form && <p className="form-error">{errors.form}</p>}<div className="form-grid"><Field label="Full name" name="fullName" value={form.fullName} onChange={updateForm} onBlur={validateFieldOnBlur} error={errors.fullName} placeholder="Your name" autoComplete="name" /><Field label="Email address" name="email" value={form.email} onChange={updateForm} onBlur={validateFieldOnBlur} error={errors.email} placeholder="you@example.com" type="email" autoComplete="email" /><Field label="Phone number" name="phone" value={form.phone} onChange={updateForm} onBlur={validateFieldOnBlur} error={errors.phone} placeholder="+8801712345678" type="tel" inputMode="numeric" autoComplete="tel" /><label className="field"><span>Membership type</span><select name="memberType" value={form.memberType} onChange={updateForm}><option>Reader</option><option>Student</option><option>Educator</option><option>Community partner</option></select></label><label className="field wide"><span>Book title <b>*</b></span><select name="bookId" value={form.bookId} onChange={(event) => { const book = books.find((item) => item.id === event.target.value); updateForm({ target: { name: 'bookId', value: event.target.value, type: 'select' } }); updateForm({ target: { name: 'bookTitle', value: book?.title || '', type: 'text' } }) }} aria-invalid={Boolean(errors.bookTitle)}><option value="">Choose a title</option>{books.map((book) => <option value={book.id} key={book.id}>{book.title}</option>)}</select>{errors.bookTitle && <small className="field-error">{errors.bookTitle}</small>}</label><Field label="Pickup date" name="pickupDate" value={form.pickupDate} onChange={updateForm} onBlur={validateFieldOnBlur} error={errors.pickupDate} type="date" /><Field label="Loan length" name="durationDays" value={form.durationDays} onChange={updateForm} onBlur={validateFieldOnBlur} error={errors.durationDays} type="number" min="1" max="30" inputMode="numeric" /><label className="field wide"><span>Anything we should know? <small>(optional)</small></span><textarea name="notes" value={form.notes} onChange={updateForm} rows="3" placeholder="Accessibility needs, a note for our librarians..."></textarea></label></div><div className="form-actions"><button className="button button-primary" type="submit">Submit reservation <ArrowRight size={17} /></button><button className="reset-button" type="button" onClick={resetForm}>Reset form</button></div></form></div></div>
 }
 
 const emptyBook = { title: '', author: '', genre: '', description: '', visualStyle: 'sage', imageUrl: '', featured: false }
@@ -324,8 +362,8 @@ function BooksPage({ books, dataError, onDetails, onHome }) {
   return <div className="app-shell"><PageHeader onHome={onHome} /><main className="collection-page section-wrap"><p className="eyebrow"><span className="eyebrow-line" /> The complete collection</p><h1>Every story<br /><em>on our shelves.</em></h1><p className="page-lede">Browse the full Shelfspace collection and choose the next book to make time for.</p>{dataError ? <p className="data-error">{dataError}</p> : books.length ? <div className="book-grid">{books.map((book) => { const Icon = bookIcons[book.visualStyle] || BookOpen; return <article className="book-card" key={book.id}><button className={`book-cover ${book.visualStyle} cover-button`} onClick={() => onDetails(book)}>{book.imageUrl ? <img src={book.imageUrl} alt={`${book.title} cover`} /> : <Icon size={37} strokeWidth={1.4} />}<span>{book.genre}</span></button><div className="book-info"><p className="book-type">From the collection</p><h3>{book.title}</h3><p>by {book.author}</p><button className="card-button" onClick={() => onDetails(book)}>View details <ArrowRight size={15} /></button></div></article> })}</div> : <BookSkeletons count={6} />}</main><PageFooter /></div>
 }
 
-function BookDetailsPage({ book, bookDetailsLoading, books, form, errors, dataError, reservationModalOpen, updateForm, submitReservation, resetForm, onHome, onReserve, closeReservation }) {
-  return <div className="app-shell"><PageHeader onHome={onHome} /><main className="detail-page section-wrap">{dataError && <p className="data-error">{dataError}</p>}{book && !bookDetailsLoading ? <><button className="back-link" onClick={() => window.history.back()}><ArrowRight size={15} /> Back to collection</button><section className="book-detail"><div className={`detail-cover ${book.visualStyle}`}>{book.imageUrl ? <img src={book.imageUrl} alt={`${book.title} cover`} /> : <BookOpen size={48} />}<span>{book.genre}</span></div><div className="detail-copy"><p className="eyebrow">Book details</p><h1>{book.title}</h1><p className="detail-author">by {book.author}</p><p>{book.description}</p><div className="detail-actions"><button className="button button-primary" onClick={() => onReserve(book)}>Reserve this book <ArrowRight size={17} /></button></div></div></section></> : <BookDetailSkeleton />}</main>{reservationModalOpen && <ReservationModal form={form} errors={errors} books={books} updateForm={updateForm} submitReservation={submitReservation} resetForm={resetForm} close={closeReservation} />}<PageFooter /></div>
+function BookDetailsPage({ book, bookDetailsLoading, books, form, errors, dataError, reservationModalOpen, updateForm, validateFieldOnBlur, submitReservation, resetForm, onHome, onReserve, closeReservation }) {
+  return <div className="app-shell"><PageHeader onHome={onHome} /><main className="detail-page section-wrap">{dataError && <p className="data-error">{dataError}</p>}{book && !bookDetailsLoading ? <><button className="back-link" onClick={() => window.history.back()}><ArrowRight size={15} /> Back to collection</button><section className="book-detail"><div className={`detail-cover ${book.visualStyle}`}>{book.imageUrl ? <img src={book.imageUrl} alt={`${book.title} cover`} /> : <BookOpen size={48} />}<span>{book.genre}</span></div><div className="detail-copy"><p className="eyebrow">Book details</p><h1>{book.title}</h1><p className="detail-author">by {book.author}</p><p>{book.description}</p><div className="detail-actions"><button className="button button-primary" onClick={() => onReserve(book)}>Reserve this book <ArrowRight size={17} /></button></div></div></section></> : <BookDetailSkeleton />}</main>{reservationModalOpen && <ReservationModal form={form} errors={errors} books={books} updateForm={updateForm} validateFieldOnBlur={validateFieldOnBlur} submitReservation={submitReservation} resetForm={resetForm} close={closeReservation} />}<PageFooter /></div>
 }
 
 function BookSkeletons({ count }) {
@@ -336,8 +374,9 @@ function BookDetailSkeleton() {
   return <section className="book-detail skeleton-detail"><div className="skeleton-detail-cover" /><div><i className="skeleton-line short" /><i className="skeleton-line title" /><i className="skeleton-line" /><i className="skeleton-line" /></div></section>
 }
 
-function Field({ label, name, value, onChange, error, placeholder, type = 'text', wide = false, min, max }) {
-  return <label className={`field ${wide ? 'wide' : ''}`}><span>{label} <b>*</b></span><input name={name} value={value} onChange={onChange} placeholder={placeholder} type={type} min={min} max={max} aria-invalid={Boolean(error)} />{error && <small className="field-error">{error}</small>}</label>
+function Field({ label, name, value, onChange, onBlur, error, placeholder, type = 'text', wide = false, min, max, inputMode, autoComplete }) {
+  const errorId = `${name}-error`
+  return <label className={`field ${wide ? 'wide' : ''}`}><span>{label} <b>*</b></span><input name={name} value={value} onChange={onChange} onBlur={onBlur} placeholder={placeholder} type={type} min={min} max={max} inputMode={inputMode} autoComplete={autoComplete} aria-invalid={Boolean(error)} aria-describedby={error ? errorId : undefined} />{error && <small className="field-error" id={errorId}>{error}</small>}</label>
 }
 
 export default App
