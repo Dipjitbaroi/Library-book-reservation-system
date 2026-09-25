@@ -247,24 +247,24 @@ function App() {
 
   return (
     <div className="app-shell">
-      <header className="site-header">
-        <a className="brand" href="#top" aria-label="Shelfspace home"><span className="brand-mark"><BookOpen size={19} /></span><span>Shelfspace<span className="brand-dot">.</span></span></a>
-        <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle navigation">{menuOpen ? <X /> : <Menu />}</button>
-        <nav className={menuOpen ? 'main-nav open' : 'main-nav'}>
-          <a href="#collection" onClick={() => setMenuOpen(false)}>Collection</a>
-          <a href="#how-it-works" onClick={() => setMenuOpen(false)}>How it works</a>
-          <a href="#stories" onClick={() => setMenuOpen(false)}>Readers</a>
-          <a href="#reserve" className="nav-cta" onClick={() => setMenuOpen(false)}>Reserve a book <ArrowRight size={15} /></a>
+      <header className="relative mx-auto flex h-[70px] w-[calc(100%-36px)] items-center justify-between md:h-[84px] md:w-[min(1200px,calc(100%-64px))]">
+        <a className="flex items-center gap-2.5 text-[19px] font-bold tracking-[-0.5px]" href="#top" aria-label="Shelfspace home"><span className="grid size-[34px] place-items-center rounded-full bg-[#21302b] text-[#fbfaf7]"><BookOpen size={19} /></span><span>Shelfspace<span className="text-[#d98d72]">.</span></span></a>
+        <button className="border-0 bg-transparent text-[#21302b] md:hidden" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle navigation">{menuOpen ? <X /> : <Menu />}</button>
+        <nav className={`${menuOpen ? 'flex' : 'hidden'} absolute top-[70px] left-0 right-0 z-10 flex-col gap-[18px] border-b border-[#deded5] bg-[#fbfaf7] px-[18px] pt-5 pb-[26px] text-[13px] text-[#56625b] md:static md:flex md:flex-row md:items-center md:gap-[35px] md:border-0 md:bg-transparent md:p-0`}>
+          <a className="hover:text-[#d98d72]" href="#collection" onClick={() => setMenuOpen(false)}>Collection</a>
+          <a className="hover:text-[#d98d72]" href="#how-it-works" onClick={() => setMenuOpen(false)}>How it works</a>
+          <a className="hover:text-[#d98d72]" href="#stories" onClick={() => setMenuOpen(false)}>Readers</a>
+          <a href="#reserve" className="flex items-center justify-center gap-2 border border-[#21302b] px-[17px] py-3 text-[#21302b] hover:bg-[#21302b] hover:text-[#fbfaf7]" onClick={() => setMenuOpen(false)}>Reserve a book <ArrowRight size={15} /></a>
         </nav>
       </header>
 
       <main id="top">
-        <section className="hero section-wrap">
-          <div className="hero-copy">
+        <section className="mx-auto grid min-h-0 w-[calc(100%-36px)] grid-cols-1 items-center gap-[42px] py-[45px] md:min-h-[560px] md:w-[min(1200px,calc(100%-64px))] md:grid-cols-2 md:gap-[70px] md:py-[58px]">
+          <div>
             <h1>Good books.<br /><em>Right on time.</em></h1>
-            <p className="hero-description">A calmer way to discover and reserve the stories you have been meaning to read. Browse our shelves, then pick up your next favorite when it suits you.</p>
-            <div className="hero-actions"><a className="button button-primary" href="#reserve">Book a title <ArrowRight size={17} /></a><a className="button button-secondary" href="#collection">Explore the shelves <ChevronDown size={17} /></a></div>
-            <div className="hero-note"><span className="avatar-stack"><i>AL</i><i>JM</i><i>SK</i></span><span><strong>2,400+</strong> happy readers this month</span></div>
+            <p className="my-[27px] max-w-[450px] text-[15px] leading-7 text-[#69736d]">A calmer way to discover and reserve the stories you have been meaning to read. Browse our shelves, then pick up your next favorite when it suits you.</p>
+            <div className="flex flex-wrap items-center gap-3"><a className="inline-flex min-h-[46px] items-center justify-center gap-2.5 bg-[#21302b] px-[19px] text-[13px] font-bold text-[#fbfaf7] hover:bg-[#4e6d5b]" href="#reserve">Book a title <ArrowRight size={17} /></a><a className="inline-flex min-h-[46px] items-center justify-center gap-2.5 border border-[#c8ccc4] px-[19px] text-[13px] font-bold" href="#collection">Explore the shelves <ChevronDown size={17} /></a></div>
+            <div className="mt-[37px] flex items-center gap-3 text-[11px] text-[#69736d]"><span className="flex [&>i]:-mr-1.5 [&>i]:grid [&>i]:size-[25px] [&>i]:place-items-center [&>i]:rounded-full [&>i]:border-2 [&>i]:border-[#f6f3ee] [&>i]:bg-[#d98d72] [&>i]:text-[8px] [&>i]:not-italic [&>i:nth-child(2)]:bg-[#4e6d5b] [&>i:nth-child(3)]:bg-[#ddb56a]"><i>AL</i><i>JM</i><i>SK</i></span><span><strong className="text-[#21302b]">2,400+</strong> happy readers this month</span></div>
           </div>
           <div className="hero-art" aria-label="Highlighted books from the collection">
             <div className="sun-shape" />
@@ -291,7 +291,8 @@ function App() {
 }
 
 function SiteFooter() {
-  return <footer className="site-footer"><div className="footer-top"><div className="footer-brand"><a className="brand" href="/" aria-label="Shelfspace home"><span className="brand-mark"><BookOpen size={19} /></span><span>Shelfspace<span className="brand-dot">.</span></span></a><p>A little more reading<br />in every day.</p></div><div className="footer-section"><h2>About us</h2><p>Shelfspace is a neighborhood library that helps readers discover thoughtful books and make time for the stories they love.</p></div><div className="footer-section footer-contact"><h2>Contact</h2><a href="mailto:hello@shelfspace.library">hello@shelfspace.library</a><a href="tel:+8801712345678"><Phone size={14} /> +880 1712-345678</a><span><MapPin size={14} /> 14 Lantern Lane, Brookfield</span></div><div className="socials"><a href="#top" aria-label="Instagram"><Instagram size={18} /></a><a href="#top" aria-label="Facebook"><Facebook size={18} /></a><a href="#top" aria-label="Twitter"><Twitter size={18} /></a></div></div><div className="footer-bottom"><span>© 2026 Shelfspace Library</span><span>Open daily, 09:00 — 19:00</span></div></footer>
+  const linkClass = 'transition-colors hover:text-[#d98d72]'
+  return <footer className="bg-[#e6ebe3] px-8 pt-12 pb-6 text-[#21302b] sm:px-[max(32px,calc((100%-1200px)/2))]"><div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-7 pb-12 sm:grid-cols-2 lg:grid-cols-[1.15fr_1fr_1fr_auto] lg:gap-9"><div className="flex flex-col gap-5"><a className="flex items-center gap-2.5 text-[19px] font-bold tracking-[-0.5px]" href="/" aria-label="Shelfspace home"><span className="grid size-[34px] place-items-center rounded-full bg-[#21302b] text-[#fbfaf7]"><BookOpen size={19} /></span><span>Shelfspace<span className="text-[#d98d72]">.</span></span></a><p className="font-[var(--serif)] text-xl leading-tight text-[#4e6d5b]">A little more reading<br />in every day.</p></div><div className="max-w-[265px]"><h2 className="mb-3 text-[11px] font-bold uppercase tracking-[1.2px]">About us</h2><p className="text-xs leading-[1.65] text-[#617067]">Shelfspace is a neighborhood library that helps readers discover thoughtful books and make time for the stories they love.</p></div><div className="flex max-w-[265px] flex-col gap-2"><h2 className="mb-1 text-[11px] font-bold uppercase tracking-[1.2px]">Contact</h2><a className={`${linkClass} text-xs leading-[1.65] text-[#617067]`} href="mailto:hello@shelfspace.library">hello@shelfspace.library</a><a className={`${linkClass} flex items-center gap-2 text-xs leading-[1.65] text-[#617067]`} href="tel:+8801712345678"><Phone size={14} /> +880 1712-345678</a><span className="flex items-center gap-2 text-xs leading-[1.65] text-[#617067]"><MapPin size={14} /> 14 Lantern Lane, Brookfield</span></div><div className="flex gap-4 text-[#4e6d5b] lg:justify-end"><a className={linkClass} href="#top" aria-label="Instagram"><Instagram size={18} /></a><a className={linkClass} href="#top" aria-label="Facebook"><Facebook size={18} /></a><a className={linkClass} href="#top" aria-label="Twitter"><Twitter size={18} /></a></div></div><div className="mx-auto flex max-w-[1200px] flex-wrap justify-between gap-3 border-t border-[#ced8cc] pt-4 text-[10px] text-[#738076]"><span>© 2026 Shelfspace Library</span><span>Open daily, 09:00 — 19:00</span></div></footer>
 }
 
 function ReservationModal({ form, errors, books, updateForm, validateFieldOnBlur, submitReservation, resetForm, close }) {
