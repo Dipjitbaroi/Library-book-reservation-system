@@ -13,23 +13,25 @@
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
-    "cors": "^2.8.5",
     "cloudinary": "^2.7.0",
+    "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.468.0",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
     "multer": "^2.0.2",
-    "jsonwebtoken": "^9.0.2"
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-react": "^5.0.4",
     "concurrently": "^9.2.1",
     "prisma": "^6.16.2",
+    "tailwindcss": "^4.3.3",
     "vite": "^7.1.7"
   }
 }
